@@ -142,7 +142,7 @@ postproc_global <- function(vdate, train_length, data){
 save.image("E:/0-TIGGE_ECMWF_Germany/ecmwf_ensemble_subset_data.RData")
 
 # test date
-eval_start <- as.Date("2016-01-03 00:00 UTC")
+eval_start <- as.Date("2016-01-01 00:00 UTC")
 eval_end <- as.Date("2016-12-31 00:00 UTC")
 eval_dates <- seq(eval_start, eval_end, by = "1 day")
 data_eval_all <- subset(ens_fc_t2m_mv_subset, 
@@ -150,19 +150,20 @@ data_eval_all <- subset(ens_fc_t2m_mv_subset,
 
 #------------------------------ 1. EMOS local
 #--------------------------- a. fixed training data 2007-2015
-vdate = date("2016-01-03")
+vdate = date("2016-01-01")
 train_length = as.numeric(vdate - date("2007-01-01") - 1)
 par_output = postproc_local(vdate = vdate, 
                             train_length = train_length, 
                             data = ens_fc_t2m_mv_subset)
 crps_pp <- NULL
+pit_pp <- NULL
 
 for(day_id in 1:length(eval_dates)){
   
   today <- eval_dates[day_id]
   data_today <- subset(data_eval_all, date == today)
-  ens_today = today - days(2)
-  ens_data_today = subset(ens_fc_t2m_mv_subset, date == ens_today)
+  #==# ens_today = today - days(2)
+  #==# ens_data_today = subset(ens_fc_t2m_mv_subset, date == ens_today)
   
   # progress indicator
   if(day(as.Date(today)) == 1){
@@ -177,10 +178,10 @@ for(day_id in 1:length(eval_dates)){
     ind_st <- which(stations_list == this_station)
     # print(ind_st)
     data_eval <- subset(data_today, station == this_station)
-    ens_data_eval = subset(ens_data_today, station == this_station)
+    #==# ens_data_eval = subset(ens_data_today, station == this_station)
     if(!is.finite(data_eval$obs)){next}
-    loc_st <- c(cbind(1, ens_data_eval$t2m_mean) %*% par_output[ind_st,1:2])
-    scsquared_tmp <- c(cbind(1, ens_data_eval$t2m_var) %*% par_output[ind_st,3:4])
+    loc_st <- c(cbind(1, data_eval$t2m_mean) %*% par_output[ind_st,1:2])
+    scsquared_tmp <- c(cbind(1, data_eval$t2m_var) %*% par_output[ind_st,3:4])
     if(is.na(scsquared_tmp)){
       next
     }
@@ -198,20 +199,27 @@ for(day_id in 1:length(eval_dates)){
   data_eval_today <- subset(data_eval_all, date == today)
   crps_today <- crps_norm(y = data_eval_today$obs, mean = loc, sd = sc)
   crps_pp[which(data_eval_all$date == today)] <- crps_today
+  
+  # PIT
+  pit_today = pnorm(data_eval_today$obs, mean = loc, sd = sc)
+  pit_pp[which(data_eval_all$date == today)] <- pit_today
 }
 
 crps_emosloc_fix9y = crps_pp
+pit_emosloc_fix9y = pit_pp
 
 #------------------------ b. rolling window (28 days) training data
 crps_pp <- NULL
+pit_pp <- NULL
+
 m = 28
 
 for(day_id in 1:length(eval_dates)){
   
   today <- eval_dates[day_id]
   data_today <- subset(data_eval_all, date == today)
-  ens_today = today - days(2)
-  ens_data_today = subset(ens_fc_t2m_mv_subset, date == ens_today)
+  #==# ens_today = today - days(2)
+  #==# ens_data_today = subset(ens_fc_t2m_mv_subset, date == ens_today)
   
   # progress indicator
   if(day(as.Date(today)) == 1){
@@ -230,10 +238,10 @@ for(day_id in 1:length(eval_dates)){
     ind_st <- which(stations_list == this_station)
     # print(ind_st)
     data_eval <- subset(data_today, station == this_station)
-    ens_data_eval = subset(ens_data_today, station == this_station)
+    #==# ens_data_eval = subset(ens_data_today, station == this_station)
     if(!is.finite(data_eval$obs)){next}
-    loc_st <- c(cbind(1, ens_data_eval$t2m_mean) %*% par_out[ind_st,1:2])
-    scsquared_tmp <- c(cbind(1, ens_data_eval$t2m_var) %*% par_out[ind_st,3:4])
+    loc_st <- c(cbind(1, data_eval$t2m_mean) %*% par_out[ind_st,1:2])
+    scsquared_tmp <- c(cbind(1, data_eval$t2m_var) %*% par_out[ind_st,3:4])
     if(is.na(scsquared_tmp)){
       next
     }
@@ -251,25 +259,31 @@ for(day_id in 1:length(eval_dates)){
   data_eval_today <- subset(data_eval_all, date == today)
   crps_today <- crps_norm(y = data_eval_today$obs, mean = loc, sd = sc)
   crps_pp[which(data_eval_all$date == today)] <- crps_today
+  
+  # PIT
+  pit_today = pnorm(data_eval_today$obs, mean = loc, sd = sc)
+  pit_pp[which(data_eval_all$date == today)] <- pit_today
 }
 
 crps_emosloc_rolling28d = crps_pp
+pit_emosloc_rolling28d = pit_pp
 
 #----------------------------------- 2. EMOS global
-vdate = date("2016-01-03")
-train_length = as.numeric(vdate - date("2007-01-03") - 1)
-par_output = postproc_global(vdate = vdate, 
-                             train_length = train_length, 
-                             data = ens_fc_t2m_mv_subset)
+vdate = date("2016-01-01")
+train_length = as.numeric(vdate - date("2007-01-01") - 1)
+par_output_gl = postproc_global(vdate = vdate, 
+                                train_length = train_length, 
+                                data = ens_fc_t2m_mv_subset)
 crps_pp <- NULL
+pit_pp <- NULL
 
 for(day_id in 1:length(eval_dates)){
   
   today <- eval_dates[day_id]
-  ens_today = today - days(2)
+  #==# ens_today = today - days(2)
   
   data_eval <- subset(ens_fc_t2m_mv_subset, date == today)
-  ens_data_eval = subset(ens_fc_t2m_mv_subset, date == ens_today)
+  #==# ens_data_eval = subset(ens_fc_t2m_mv_subset, date == ens_today)
   
   # progress indicator
   if(day(as.Date(today)) == 1){
@@ -278,8 +292,8 @@ for(day_id in 1:length(eval_dates)){
   }
   
   # out of sample distribution parameters for today
-  loc <- c(cbind(1, ens_data_eval$t2m_mean) %*% par_out[1:2])
-  scsquared_tmp <- c(cbind(1, ens_data_eval$t2m_var) %*% par_out[3:4])
+  loc <- c(cbind(1, data_eval$t2m_mean) %*% par_output_gl[1:2])
+  scsquared_tmp <- c(cbind(1, data_eval$t2m_var) %*% par_output_gl[3:4])
   if(any(scsquared_tmp <= 0)){
     print("negative scale, taking absolute value")
     sc <- sqrt(abs(scsquared_tmp))
@@ -287,20 +301,64 @@ for(day_id in 1:length(eval_dates)){
     sc <- sqrt(scsquared_tmp)
   }
   
-  # CRPS computation
+  # CRPS
   crps_today <- crps_norm(y = data_eval$obs, mean = loc, sd = sc)
   crps_pp[which(data_eval_all$date == today)] <- crps_today
+  
+  # PIT
+  pit_today = pnorm(data_eval_today$obs, mean = loc, sd = sc)
+  pit_pp[which(data_eval_all$date == today)] <- pit_today
 }
 
 crps_emosglob_fix9y = crps_pp
+pit_emosglob_fix9y = pit_pp
 
 #############################################
 ############ comparison and visualization
 #############################################
 
+crps_ens <- NULL
+rank_ens <- NULL
+
+for(day_id in 1:length(eval_dates)){
+  
+  today <- eval_dates[day_id]
+  #==# ens_today = today - days(2)
+  
+  data_eval <- subset(ens_fc_t2m_mv_subset, date == today)
+  #==# ens_data_eval = subset(ens_fc_t2m_mv_subset, date == ens_today)
+  
+  # progress indicator
+  if(day(as.Date(today)) == 1){
+    cat("Starting at", paste(Sys.time()), ":", 
+        as.character(today), "\n"); flush(stdout())
+  }
+  
+  ens_dat = apply(data_eval[,6:55], 2, function(x){
+    as.numeric(x)
+  })
+  
+  # CRPS
+  crps_today <- crps_sample(y = data_eval$obs, 
+                            dat = ens_dat, 
+                            method = "edf")
+  crps_ens[which(data_eval_all$date == today)] <- crps_today
+  
+  # ranks
+  rank_today = apply(cbind(data_eval$obs, ens_dat), 1, function(x) 
+    rank(x, ties = "random")[1])
+  rank_ens[which(data_eval_all$date == today)] <- rank_today
+}
+
+summary(crps_ens)
 summary(crps_emosloc_fix9y)
 summary(crps_emosloc_rolling28d)
 summary(crps_emosglob_fix9y)
+
+hist(rank_ens)
+hist(pit_emosloc_fix9y)
+hist(pit_emosloc_rolling28d)
+hist(pit_emosglob_fix9y)
 
 crps_test_all = tibble(date = data_eval_all$date,
                        station = data_eval_all$station,
@@ -322,4 +380,8 @@ ggplot(crps_test_all) +
                  fill = 'orange', alpha = 0.6) +
   geom_histogram(aes(emosglob_fix9y), binwidth = 0.1, 
                  fill = 'forestgreen', alpha = 0.6)
+
+
+
+
 

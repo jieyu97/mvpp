@@ -20,7 +20,6 @@ par_output = postproc_local(vdate = vdate,
                             train_length = train_length, 
                             data = ens_fc_t2m_mv_subset)
 
-ens_eval_start = eval_start - days(2)
 ##########################################
 ################# 1. ECC-Q/R/QO/S/T
 ##########################################
@@ -38,8 +37,8 @@ for(day_id in 1:length(eval_dates)){
   
   today <- eval_dates[day_id]
   data_today <- subset(data_eval_all, date == today)
-  ens_today = today - days(2)
-  ens_data_today = subset(ens_fc_t2m_mv_subset, date == ens_today)
+  #==# ens_today = today - days(2)
+  #==# ens_data_today = subset(ens_fc_t2m_mv_subset, date == ens_today)
   
   # progress indicator
   if(day(as.Date(today)) == 1){
@@ -51,10 +50,10 @@ for(day_id in 1:length(eval_dates)){
     ind_st <- which(stations_list == this_station)
     # print(ind_st)
     data_eval <- subset(data_today, station == this_station)
-    ens_data_eval = subset(ens_data_today, station == this_station)
+    #==# ens_data_eval = subset(ens_data_today, station == this_station)
     if(!is.finite(data_eval$obs)){next}
-    loc_st <- c(cbind(1, ens_data_eval$t2m_mean) %*% par_output[ind_st,1:2])
-    scsquared_tmp <- c(cbind(1, ens_data_eval$t2m_var) %*% par_output[ind_st,3:4])
+    loc_st <- c(cbind(1, data_eval$t2m_mean) %*% par_output[ind_st,1:2])
+    scsquared_tmp <- c(cbind(1, data_eval$t2m_var) %*% par_output[ind_st,3:4])
     if(is.na(scsquared_tmp)){
       next
     }
@@ -65,7 +64,7 @@ for(day_id in 1:length(eval_dates)){
       sc_st <- sqrt(scsquared_tmp)
     }
     
-    ensfc_tmp = ens_data_eval[6:55]
+    ensfc_tmp = data_eval[6:55]
     
     # generate 50 samples from ensemble PP marginal distribution
     
@@ -136,8 +135,8 @@ for(day_id in 1:length(eval_dates)){
   
   today <- eval_dates[day_id]
   data_today <- subset(data_eval_all, date == today)
-  ens_today = today - days(2)
-  ens_data_today = subset(ens_fc_t2m_mv_subset, date == ens_today)
+  #==# ens_today = today - days(2)
+  #==# ens_data_today = subset(ens_fc_t2m_mv_subset, date == ens_today)
   
   obs_rows = sample(x = 1:length(train_obs_dates), size = 50, replace = FALSE)
   
@@ -151,10 +150,10 @@ for(day_id in 1:length(eval_dates)){
     ind_st <- which(stations_list == this_station)
     # print(ind_st)
     data_eval <- subset(data_today, station == this_station)
-    ens_data_eval = subset(ens_data_today, station == this_station)
+    #==# ens_data_eval = subset(ens_data_today, station == this_station)
     if(!is.finite(data_eval$obs)){next}
-    loc_st <- c(cbind(1, ens_data_eval$t2m_mean) %*% par_output[ind_st,1:2])
-    scsquared_tmp <- c(cbind(1, ens_data_eval$t2m_var) %*% par_output[ind_st,3:4])
+    loc_st <- c(cbind(1, data_eval$t2m_mean) %*% par_output[ind_st,1:2])
+    scsquared_tmp <- c(cbind(1, data_eval$t2m_var) %*% par_output[ind_st,3:4])
     if(is.na(scsquared_tmp)){
       next
     }
@@ -213,8 +212,8 @@ for(day_id in 1:length(eval_dates)){
   
   today <- eval_dates[day_id]
   data_today <- subset(data_eval_all, date == today)
-  ens_today = today - days(2)
-  ens_data_today = subset(ens_fc_t2m_mv_subset, date == ens_today)
+  #==# ens_today = today - days(2)
+  #==# ens_data_today = subset(ens_fc_t2m_mv_subset, date == ens_today)
   
   # progress indicator
   if(day(as.Date(today)) == 1){
@@ -228,10 +227,10 @@ for(day_id in 1:length(eval_dates)){
     ind_st <- which(stations_list == this_station)
     # print(ind_st)
     data_eval <- subset(data_today, station == this_station)
-    ens_data_eval = subset(ens_data_today, station == this_station)
+    #==# ens_data_eval = subset(ens_data_today, station == this_station)
     if(!is.finite(data_eval$obs)){next}
-    loc_st <- c(cbind(1, ens_data_eval$t2m_mean) %*% par_output[ind_st,1:2])
-    scsquared_tmp <- c(cbind(1, ens_data_eval$t2m_var) %*% par_output[ind_st,3:4])
+    loc_st <- c(cbind(1, data_eval$t2m_mean) %*% par_output[ind_st,1:2])
+    scsquared_tmp <- c(cbind(1, data_eval$t2m_var) %*% par_output[ind_st,3:4])
     if(is.na(scsquared_tmp)){
       next
     }
@@ -247,6 +246,7 @@ for(day_id in 1:length(eval_dates)){
     mvpp_thisstation = 
       qnorm(pnorm(mvsample[,ind_st]), mean = loc_st, sd = sc_st)
 
+    # If return Inf in the 'qnorm' function, then replace Inf with:
     inf_label = which(mvpp_thisstation == Inf)
     mvpp_thisstation[inf_label] = qnorm(0.9999999999999999, mean = loc_st, sd = sc_st)
     
@@ -280,7 +280,7 @@ for(day_id in 1:length(eval_dates)){
   # print(day_id)
   today <- eval_dates[day_id]
   
-  ens_data_today <- subset(data_eval_all, date == (today-days(2)) )
+  data_today <- subset(data_eval_all, date == today )
   
   ecc_data_today <- subset(ecc_eval_all, date == today)
   ssh_data_today <- subset(ssh_eval_all, date == today)
@@ -305,9 +305,9 @@ for(day_id in 1:length(eval_dates)){
   emos_vs_today = vs_sample(y = emos_data_today$obs, 
                            dat = as.matrix(emos_data_today[,6:55]))
   ens_es_today = es_sample(y = emos_data_today$obs,
-                           dat = as.matrix(ens_data_today[,6:55]))
+                           dat = as.matrix(data_today[,6:55]))
   ens_vs_today = vs_sample(y = emos_data_today$obs,
-                           dat = as.matrix(ens_data_today[,6:55]))
+                           dat = as.matrix(data_today[,6:55]))
   
   es_ecc[day_id] = ecc_es_today
   vs_ecc[day_id] = ecc_vs_today
@@ -326,11 +326,13 @@ summary(es_ecc)
 summary(es_ssh)
 summary(es_gca)
 summary(es_emos)
+summary(es_ens)
 
 summary(vs_ecc)
 summary(vs_ssh)
 summary(vs_gca)
 summary(vs_emos)
+summary(vs_ens)
 
 save.image("E:/0-TIGGE_ECMWF_Germany/ecmwf_ens_subset_mvpp.RData")
 
@@ -338,7 +340,12 @@ save.image("E:/0-TIGGE_ECMWF_Germany/ecmwf_ens_subset_mvpp.RData")
 
 library(ensembleBMA)
 
+# rank histograms:
+# raw ensemble members
+verifRankHist(ens_fc_t2m_mv_subset[,6:55],ens_fc_t2m_mv_subset[,3])
+# ensemble members after univariate post-processing
 verifRankHist(emos_eval_all[,6:55],emos_eval_all[,3])
+# ensemble members generated from GCA method
 verifRankHist(gca_eval_all[,6:55],gca_eval_all[,3])
 
 for (this_station in stations_list) {
