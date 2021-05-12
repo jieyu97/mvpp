@@ -1,3 +1,5 @@
+Sys.setlocale(category = "LC_ALL", locale = "english")
+
 library(scoringRules)
 library(lubridate)
 library(crch)
@@ -7,15 +9,15 @@ library(ggplot2)
 load("E:/0-TIGGE_ECMWF_Germany/ecmwf_ensemble_subset_data.RData")
 
 ########## Fixed training data 2007-2015
-eval_start <- as.Date("2016-01-03 00:00 UTC")
+eval_start <- as.Date("2016-01-01 00:00 UTC")
 eval_end <- as.Date("2016-12-31 00:00 UTC")
 eval_dates <- seq(eval_start, eval_end, by = "1 day")
 data_eval_all <- subset(ens_fc_t2m_mv_subset, 
                         date >= eval_start & date <= eval_end)
 
 # Univariate PP using EMOS local with fixed 9-year training period
-vdate = date("2016-01-03")
-train_length = as.numeric(vdate - date("2007-01-03") - 1)
+vdate = date("2016-01-01")
+train_length = as.numeric(vdate - date("2007-01-01") - 1)
 par_output = postproc_local(vdate = vdate, 
                             train_length = train_length, 
                             data = ens_fc_t2m_mv_subset)
@@ -202,10 +204,54 @@ emos_eval_all_n == emos_eval_all
 ##########################################
 
 library(MASS)
-cov_obs <- cov(train_obs_all[,2:8], use = "complete.obs",
-               method = "pearson") # or "pairwise.complete.obs"
-# mvsample <- mvrnorm(n = 50, mu = rep(0,7), Sigma = cov_obs)
+#----- Step 1. in the paper:
+train_obs_latent = train_obs_all
+train_obs_latent[,2:8] = NA
+for(day_id in 1:length(train_obs_dates)){
+  
+  today <- train_obs_dates[day_id]
+  data_today <- subset(ens_fc_t2m_mv_subset, date == today)
+  
+  # progress indicator
+  if(day(as.Date(today)) == 1){
+    cat("Starting at", paste(Sys.time()), ":", 
+        as.character(today), "\n"); flush(stdout())
+  }
+  
+  for(this_station in stations_list){
+    ind_st <- which(stations_list == this_station)
+    data_eval <- subset(data_today, station == this_station)
+    
+    if(nrow(data_eval) == 0){next}
+    if(!is.finite(data_eval$obs)){next}
+    loc_st <- c(cbind(1, data_eval$t2m_mean) %*% par_output[ind_st,1:2])
+    scsquared_tmp <- c(cbind(1, data_eval$t2m_var) %*% par_output[ind_st,3:4])
+    if(is.na(scsquared_tmp)){next}
+    if(scsquared_tmp <= 0){
+      # print("negative scale, taking absolute value")
+      sc_st <- sqrt(abs(scsquared_tmp))
+    } else {
+      sc_st <- sqrt(scsquared_tmp)
+    }
+    
+    # generate latent past observations
+    latent_obs = qnorm(pnorm(data_eval$obs, mean = loc_st, sd = sc_st))
 
+    nrow = which(train_obs_latent$date == today)
+    train_obs_latent[nrow, (ind_st + 1)] = as.numeric(latent_obs)
+  }
+}
+
+View(train_obs_latent)
+
+#----- Step 2. in the paper
+# get correlation matrix of the latent observation variables distribution
+# cov_obs <- cov(train_obs_latent[,2:8], use = "complete.obs",
+#                method = "pearson") # or "pairwise.complete.obs"
+corr_obs <- cor(train_obs_latent[,2:8], use = "complete.obs",
+               method = "pearson") # or "pairwise.complete.obs"
+
+#----- Step 3. & 4. in the paper
 gca_eval_all = as.data.frame(data_eval_all)
 
 for(day_id in 1:length(eval_dates)){
@@ -221,7 +267,8 @@ for(day_id in 1:length(eval_dates)){
         as.character(today), "\n"); flush(stdout())
   }
   
-  mvsample <- mvrnorm(n = 50, mu = rep(0,7), Sigma = cov_obs)
+  #----- Step 3. in the paper
+  mvsample <- mvrnorm(n = 50, mu = rep(0,7), Sigma = corr_obs)
   
   for(this_station in stations_list){
     ind_st <- which(stations_list == this_station)
@@ -241,14 +288,13 @@ for(day_id in 1:length(eval_dates)){
       sc_st <- sqrt(scsquared_tmp)
     }
     
-    # generate 50 samples from multivariate Gaussian latent distribution
-
+    #----- Step 4. in the paper
     mvpp_thisstation = 
       qnorm(pnorm(mvsample[,ind_st]), mean = loc_st, sd = sc_st)
 
     # If return Inf in the 'qnorm' function, then replace Inf with:
-    inf_label = which(mvpp_thisstation == Inf)
-    mvpp_thisstation[inf_label] = qnorm(0.9999999999999999, mean = loc_st, sd = sc_st)
+    # inf_label = which(mvpp_thisstation == Inf)
+    # mvpp_thisstation[inf_label] = qnorm(0.9999999999999999, mean = loc_st, sd = sc_st)
     
     nrow = which(gca_eval_all$date == today & 
                    gca_eval_all$station == this_station)
@@ -257,14 +303,18 @@ for(day_id in 1:length(eval_dates)){
 }
 
 gca_eval_all$t2m_mean = 
-  apply(ecc_eval_all[,6:55], 1, FUN = function(x) {mean(x, na.rm = TRUE)} )
+  apply(gca_eval_all[,6:55], 1, FUN = function(x) {mean(x, na.rm = TRUE)} )
 gca_eval_all$t2m_var = 
-  apply(ecc_eval_all[,6:55], 1, FUN = function(x) {var(x, na.rm = TRUE)} )
+  apply(gca_eval_all[,6:55], 1, FUN = function(x) {var(x, na.rm = TRUE)} )
 
 View(gca_eval_all)
 which(gca_eval_all == Inf)
 
-# scores
+
+###########################
+######### scores
+###########################
+
 es_ecc = rep(NA, length(eval_dates))
 vs_ecc = rep(NA, length(eval_dates))
 es_ssh = rep(NA, length(eval_dates))
@@ -342,51 +392,144 @@ library(ensembleBMA)
 
 # rank histograms:
 # raw ensemble members
-verifRankHist(ens_fc_t2m_mv_subset[,6:55],ens_fc_t2m_mv_subset[,3])
+verifRankHist(data_eval_all[,6:55],data_eval_all[,3])
 # ensemble members after univariate post-processing
 verifRankHist(emos_eval_all[,6:55],emos_eval_all[,3])
 # ensemble members generated from GCA method
 verifRankHist(gca_eval_all[,6:55],gca_eval_all[,3])
 
 for (this_station in stations_list) {
-  this_station_label = which(emos_eval_all$station == this_station)
+  this_station_label = which(data_eval_all$station == this_station)
+  verifRankHist(data_eval_all[this_station_label,6:55],
+                data_eval_all[this_station_label,3])
   verifRankHist(emos_eval_all[this_station_label,6:55],
                 emos_eval_all[this_station_label,3])
   verifRankHist(gca_eval_all[this_station_label,6:55],
-                emos_eval_all[this_station_label,3])
+                gca_eval_all[this_station_label,3])
 }
 
-# average multivariate rank histogram
-multi_rank = rep(NA, length(eval_dates))
+
+# ----------------------------------
+# helper functions for multivariate ranks
+# based on code by M.Scheuerer & T.L.Thorarinsdottir
+
+# Average rank
+compute_avr <- function(obs, fc){
+  x <- cbind(obs, fc)
+  x.ranks <- apply(x,1,rank)
+  x.preranks <- apply(x.ranks,1,mean)
+  x.rank <- rank(x.preranks,ties="random")
+  return(x.rank[1])
+}
+
+# Band depth rank
+compute_bdr <- function(obs, fc){
+  x <- cbind(obs, fc)
+  d <- dim(x)
+  x.prerank <- array(NA,dim=d)
+  for(i in 1:d[1]) {
+    z <- x[i,]
+    tmp.ranks <- rank(z)
+    x.prerank[i,] <- tmp.ranks * {d[2] - tmp.ranks} + {tmp.ranks - 1} *
+      sapply(z, function(x, z) sum(x == z), z = z)
+  }
+  x.rank <- apply(x.prerank, 2, mean)
+  x.rank <- rank(x.rank, ties = "random")[1]
+  return(x.rank)
+}
+
+# Multivariate rank
+compute_mvr <- function(obs, fc){
+  x <- cbind(obs, fc)
+  d <- dim(x)
+  x.prerank <- numeric(d[2])
+  for(i in 1:d[2]) {
+    x.prerank[i] <- sum(apply(x<=x[,i],2,all))
+  }
+  x.rank <- rank(x.prerank,ties="random")
+  return(x.rank[1])
+}
+
+#------ multivariate rank histograms
+ecc_avr = rep(NA, length(eval_dates))
+ecc_bdr = rep(NA, length(eval_dates))
+ecc_mvr = rep(NA, length(eval_dates))
+ssh_avr = ecc_avr
+ssh_bdr = ecc_bdr
+ssh_mvr = ecc_mvr
+gca_avr = ecc_avr
+gca_bdr = ecc_bdr
+gca_mvr = ecc_mvr
+emos_avr = ecc_avr
+emos_bdr = ecc_bdr
+emos_mvr = ecc_mvr
+ens_avr = ecc_avr
+ens_bdr = ecc_bdr
+ens_mvr = ecc_mvr
+
 for(day_id in 1:length(eval_dates)){
-  # print(day_id)
+  print(day_id)
   today <- eval_dates[day_id]
   
   ecc_data_today <- subset(ecc_eval_all, date == today)
-  # ssh_data_today <- subset(ssh_eval_all, date == today)
-  # gca_data_today <- subset(gca_eval_all, date == today)
-  # emos_data_today <- subset(emos_eval_all, date == today)
+  ssh_data_today <- subset(ssh_eval_all, date == today)
+  gca_data_today <- subset(gca_eval_all, date == today)
+  emos_data_today <- subset(emos_eval_all, date == today)
+  ens_data_today <- subset(data_eval_all, date == today)
   
-  observations = ecc_data_today[,3]
-  forecasts = ecc_data_today[,6:55]
+  ecc_avr[day_id] = compute_avr(obs = ecc_data_today[,3], 
+                                fc = ecc_data_today[,6:55])
+  ecc_bdr[day_id] = compute_bdr(obs = ecc_data_today[,3], 
+                                fc = ecc_data_today[,6:55])
+  ecc_mvr[day_id] = compute_mvr(obs = ecc_data_today[,3], 
+                                fc = ecc_data_today[,6:55])
   
-  trajectory_rank <- apply(cbind(observations, forecasts), 1, function(x) 
-    rank(x, ties = "random"))
-  average_rank = apply(trajectory_rank, 1, mean)
-  obs_average_rank = rank(average_rank, ties = "random")[1]
-
-  multi_rank[day_id] = obs_average_rank
+  ssh_avr[day_id] = compute_avr(obs = ssh_data_today[,3], 
+                                fc = ssh_data_today[,6:55])
+  ssh_bdr[day_id] = compute_bdr(obs = ssh_data_today[,3], 
+                                fc = ssh_data_today[,6:55])
+  ssh_mvr[day_id] = compute_mvr(obs = ssh_data_today[,3], 
+                                fc = ssh_data_today[,6:55])
+  
+  gca_avr[day_id] = compute_avr(obs = gca_data_today[,3], 
+                                fc = gca_data_today[,6:55])
+  gca_bdr[day_id] = compute_bdr(obs = gca_data_today[,3], 
+                                fc = gca_data_today[,6:55])
+  gca_mvr[day_id] = compute_mvr(obs = gca_data_today[,3], 
+                                fc = gca_data_today[,6:55])
+  
+  emos_avr[day_id] = compute_avr(obs = emos_data_today[,3], 
+                                fc = emos_data_today[,6:55])
+  emos_bdr[day_id] = compute_bdr(obs = emos_data_today[,3], 
+                                fc = emos_data_today[,6:55])
+  emos_mvr[day_id] = compute_mvr(obs = emos_data_today[,3], 
+                                fc = emos_data_today[,6:55])
+  
+  ens_avr[day_id] = compute_avr(obs = ens_data_today[,3], 
+                                fc = ens_data_today[,6:55])
+  ens_bdr[day_id] = compute_bdr(obs = ens_data_today[,3], 
+                                fc = ens_data_today[,6:55])
+  ens_mvr[day_id] = compute_mvr(obs = ens_data_today[,3], 
+                                fc = ens_data_today[,6:55])
 }
 
-hist(multi_rank)
+hist(ecc_avr)
+hist(ssh_avr)
+hist(gca_avr)
+hist(emos_avr)
+hist(ens_avr)
 
+hist(ecc_bdr)
+hist(ssh_bdr)
+hist(gca_bdr)
+hist(emos_bdr)
+hist(ens_bdr)
 
-
-
-
-
-
-
+hist(ecc_mvr)
+hist(ssh_mvr)
+hist(gca_mvr)
+hist(emos_mvr)
+hist(ens_mvr)
 
 
 

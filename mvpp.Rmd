@@ -59,129 +59,31 @@ summary(vs_gca)
 ```{r rankhist, echo=FALSE, message=FALSE, warning=FALSE}
 
 print("Raw ensemble members:")
-verifRankHist(ens_fc_t2m_mv_subset[,6:55],ens_fc_t2m_mv_subset[,3])
+verifRankHist(data_eval_all[,6:55],data_eval_all[,3])
 print("EMOS-Q, ECC-Q, SSH-Q:")
 verifRankHist(emos_eval_all[,6:55],emos_eval_all[,3])
 print("GCA:")
 verifRankHist(gca_eval_all[,6:55],gca_eval_all[,3])
 
-print("Multivariate rank histograms using average ranks:")
+print("Multivariate rank histograms using the average rank:")
+hist(ecc_avr)
+hist(ssh_avr)
+hist(gca_avr)
+hist(emos_avr)
+hist(ens_avr)
 
-multi_rank_ens = rep(NA, length(eval_dates))
-for(day_id in 1:length(eval_dates)){
-  # print(day_id)
-  today <- eval_dates[day_id]
-  
-  data_today <- subset(data_eval_all, date == today)
-  # ecc_data_today <- subset(ecc_eval_all, date == today)
-  # ssh_data_today <- subset(ssh_eval_all, date == today)
-  # gca_data_today <- subset(gca_eval_all, date == today)
-  # emos_data_today <- subset(emos_eval_all, date == today)
-  
-  observations = data_today[,3]
-  forecasts = data_today[,6:55]
-  
-  trajectory_rank <- apply(cbind(observations, forecasts), 1, function(x) 
-    rank(x, ties = "random"))
-  average_rank = apply(trajectory_rank, 1, mean)
-  obs_average_rank = rank(average_rank, ties = "random")[1]
+print("Multivariate rank histograms using the band depth rank:")
+hist(ecc_bdr)
+hist(ssh_bdr)
+hist(gca_bdr)
+hist(emos_bdr)
+hist(ens_bdr)
 
-  multi_rank_ens[day_id] = obs_average_rank
-}
-hist(multi_rank_ens)
-
-multi_rank_emos = rep(NA, length(eval_dates))
-for(day_id in 1:length(eval_dates)){
-  # print(day_id)
-  today <- eval_dates[day_id]
-  
-  # data_today <- subset(data_eval_all, date == today)
-  # ecc_data_today <- subset(ecc_eval_all, date == today)
-  # ssh_data_today <- subset(ssh_eval_all, date == today)
-  # gca_data_today <- subset(gca_eval_all, date == today)
-  emos_data_today <- subset(emos_eval_all, date == today)
-  
-  observations = emos_data_today[,3]
-  forecasts = emos_data_today[,6:55]
-  
-  trajectory_rank <- apply(cbind(observations, forecasts), 1, function(x) 
-    rank(x, ties = "random"))
-  average_rank = apply(trajectory_rank, 1, mean)
-  obs_average_rank = rank(average_rank, ties = "random")[1]
-
-  multi_rank_emos[day_id] = obs_average_rank
-}
-hist(multi_rank_emos)
-
-multi_rank_ecc = rep(NA, length(eval_dates))
-for(day_id in 1:length(eval_dates)){
-  # print(day_id)
-  today <- eval_dates[day_id]
-
-  # data_today <- subset(data_eval_all, date == today)
-  ecc_data_today <- subset(ecc_eval_all, date == today)
-  # ssh_data_today <- subset(ssh_eval_all, date == today)
-  # gca_data_today <- subset(gca_eval_all, date == today)
-  # emos_data_today <- subset(emos_eval_all, date == today)
-  
-  observations = ecc_data_today[,3]
-  forecasts = ecc_data_today[,6:55]
-  
-  trajectory_rank <- apply(cbind(observations, forecasts), 1, function(x) 
-    rank(x, ties = "random"))
-  average_rank = apply(trajectory_rank, 1, mean)
-  obs_average_rank = rank(average_rank, ties = "random")[1]
-
-  multi_rank_ecc[day_id] = obs_average_rank
-}
-hist(multi_rank_ecc)
-
-multi_rank_ssh = rep(NA, length(eval_dates))
-for(day_id in 1:length(eval_dates)){
-  # print(day_id)
-  today <- eval_dates[day_id]
-
-  # data_today <- subset(data_eval_all, date == today)
-  # ecc_data_today <- subset(ecc_eval_all, date == today)
-  ssh_data_today <- subset(ssh_eval_all, date == today)
-  # gca_data_today <- subset(gca_eval_all, date == today)
-  # emos_data_today <- subset(emos_eval_all, date == today)
-  
-  observations = ssh_data_today[,3]
-  forecasts = ssh_data_today[,6:55]
-  
-  trajectory_rank <- apply(cbind(observations, forecasts), 1, function(x) 
-    rank(x, ties = "random"))
-  average_rank = apply(trajectory_rank, 1, mean)
-  obs_average_rank = rank(average_rank, ties = "random")[1]
-
-  multi_rank_ssh[day_id] = obs_average_rank
-}
-hist(multi_rank_ssh)
-
-multi_rank_gca = rep(NA, length(eval_dates))
-for(day_id in 1:length(eval_dates)){
-  # print(day_id)
-  today <- eval_dates[day_id]
-
-  # data_today <- subset(data_eval_all, date == today)
-  # ecc_data_today <- subset(ecc_eval_all, date == today)
-  # ssh_data_today <- subset(ssh_eval_all, date == today)
-  gca_data_today <- subset(gca_eval_all, date == today)
-  # emos_data_today <- subset(emos_eval_all, date == today)
-  
-  observations = gca_data_today[,3]
-  forecasts = gca_data_today[,6:55]
-  
-  trajectory_rank <- apply(cbind(observations, forecasts), 1, function(x) 
-    rank(x, ties = "random"))
-  average_rank = apply(trajectory_rank, 1, mean)
-  obs_average_rank = rank(average_rank, ties = "random")[1]
-
-  multi_rank_gca[day_id] = obs_average_rank
-}
-hist(multi_rank_gca)
-
-
+print("Multivariate rank histograms using the multivariate rank:")
+hist(ecc_mvr)
+hist(ssh_mvr)
+hist(gca_mvr)
+hist(emos_mvr)
+hist(ens_mvr)
 
 ```

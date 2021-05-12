@@ -1,3 +1,5 @@
+Sys.setlocale(category = "LC_ALL", locale = "english")
+
 library(scoringRules)
 library(lubridate)
 library(crch)
@@ -196,12 +198,11 @@ for(day_id in 1:length(eval_dates)){
   }
   
   # CRPS
-  data_eval_today <- subset(data_eval_all, date == today)
-  crps_today <- crps_norm(y = data_eval_today$obs, mean = loc, sd = sc)
+  crps_today <- crps_norm(y = data_today$obs, mean = loc, sd = sc)
   crps_pp[which(data_eval_all$date == today)] <- crps_today
   
   # PIT
-  pit_today = pnorm(data_eval_today$obs, mean = loc, sd = sc)
+  pit_today = pnorm(data_today$obs, mean = loc, sd = sc)
   pit_pp[which(data_eval_all$date == today)] <- pit_today
 }
 
@@ -256,12 +257,11 @@ for(day_id in 1:length(eval_dates)){
   }
   
   # CRPS
-  data_eval_today <- subset(data_eval_all, date == today)
-  crps_today <- crps_norm(y = data_eval_today$obs, mean = loc, sd = sc)
+  crps_today <- crps_norm(y = data_today$obs, mean = loc, sd = sc)
   crps_pp[which(data_eval_all$date == today)] <- crps_today
   
   # PIT
-  pit_today = pnorm(data_eval_today$obs, mean = loc, sd = sc)
+  pit_today = pnorm(data_today$obs, mean = loc, sd = sc)
   pit_pp[which(data_eval_all$date == today)] <- pit_today
 }
 
@@ -306,7 +306,7 @@ for(day_id in 1:length(eval_dates)){
   crps_pp[which(data_eval_all$date == today)] <- crps_today
   
   # PIT
-  pit_today = pnorm(data_eval_today$obs, mean = loc, sd = sc)
+  pit_today = pnorm(data_eval$obs, mean = loc, sd = sc)
   pit_pp[which(data_eval_all$date == today)] <- pit_today
 }
 
