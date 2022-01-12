@@ -139,6 +139,8 @@ class igep(object):
             self._build_model = self._build_model_325
         elif model_type == 326:
             self._build_model = self._build_model_326
+        elif model_type == 327:
+            self._build_model = self._build_model_327
             
         self.layer_number = layer_number
         self.nodes_number = nodes_number
@@ -753,11 +755,12 @@ class igep(object):
         z_delta = layers.Dense(self.dim_out, use_bias=True, activation = 'linear')(z_delta) # (, dim_out*1)
         #####
         
-        z_delta_flat = layers.Flatten()(z_delta)
+#        z_delta_flat = layers.Flatten()(z_delta)
         
         z_delta_final = layers.Dense(self.dim_latent, activation = 'exponential')(z_delta_flat) # spread of latent variables 
+        z_delta_reshape = layers.Reshape((self.dim_latent, 1))(z_delta_final) # (, dim_latent, 1)
         
-        z_delta_reshape = layers.Lambda(lambda arg: K.reshape(arg, (bs, self.dim_latent, 1)))(z_delta_final) # (, dim_latent, 1)
+#        z_delta_reshape = layers.Lambda(lambda arg: K.reshape(arg, (bs, self.dim_latent, 1)))(z_delta_final) # (, dim_latent, 1)
         
         if self.latent_dist == "uniform":
             z = layers.Lambda(lambda args: K.random_uniform(shape=(args[0], args[1], args[2]), 
@@ -865,6 +868,69 @@ class igep(object):
         
         return Model(inputs=[input_mean, input_sd, input_all], outputs=y_positive)
         
+
+
+    def _build_model_327(self):        
+
+        ### Inputs ###
+        input_mean = keras.Input(shape=(self.dim_out, self.dim_in_mean), name = "input_mean")
+        input_sd = keras.Input(shape=(self.dim_out, self.dim_in_std), name = "input_sd")
+        input_all = keras.Input(shape=(self.dim_out, self.dim_in_features), name = "input_all")
+        bs = K.shape(input_mean)[0]
+        
+        #####
+        x_mean = layers.Flatten()(input_mean)
+        
+        x_mean = layers.Dense(100, use_bias=True, activation = 'elu')(x_mean)
+        x_mean = layers.Dense(100, use_bias=True, activation = 'elu')(x_mean)
+        x_mean = layers.Dense(100, use_bias=True, activation = 'elu')(x_mean)
+        
+        x_mean = layers.Dense(self.dim_out, use_bias=True, activation = 'elu')(x_mean) # (, dim_out*1)
+        x_mean = layers.Reshape((self.dim_out, 1))(x_mean) # (, dim_out, 1)
+        #####
+        
+        x_mean_all = layers.Lambda(lambda arg: K.repeat_elements(arg, self._n_samples, axis=-1))(x_mean) # (, dim_out, n_samples)
+        
+        #####
+        z_delta = layers.Flatten()(input_sd)
+        
+        z_delta = layers.Dense(100, use_bias=True, activation = 'elu')(z_delta)
+        z_delta = layers.Dense(100, use_bias=True, activation = 'elu')(z_delta)
+        z_delta = layers.Dense(100, use_bias=True, activation = 'elu')(z_delta)
+        
+        z_delta_final = layers.Dense(self.dim_latent, activation = 'exponential')(z_delta_flat) # spread of latent variables 
+        z_delta_reshape = layers.Reshape((self.dim_latent, 1))(z_delta_final) # (, dim_latent, 1)
+        #####
+        
+        if self.latent_dist == "uniform":
+            z = layers.Lambda(lambda args: K.random_uniform(shape=(args[0], args[1], args[2]), 
+                                                     minval=self.latent_dist_params[0], 
+                                                     maxval=self.latent_dist_params[1]))([bs, self.dim_latent, self._n_samples])
+        elif self.latent_dist == "normal":
+            z = layers.Lambda(lambda args: K.random_normal(shape=(args[0], args[1], args[2]), 
+                                                    mean=self.latent_dist_params[0], 
+                                                    stddev=self.latent_dist_params[1]))([bs, self.dim_latent, self._n_samples])
+       
+        z_adjust_spread = layers.Multiply()([z_delta_reshape, z]) # (, dim_latent, n_samples)
+        
+        #####
+        W = layers.Flatten()(input_all)
+        z_n = layers.Flatten()(z_adjust_spread)
+        W = layers.Concatenate(axis=1)([W, z_n])
+        
+        W_con = layers.Dense(100, use_bias=True, activation = 'elu')(W_con)
+        
+        W = layers.Dense(self.dim_out*self._n_samples, use_bias=True, activation = 'linear')(W) # (, dim_out*n_samples)
+        z_samples = layers.Reshape((self.dim_out, self._n_samples))(W) # (, dim_out, n_samples)
+        
+        y = layers.Add()([x_mean_all, z_samples])
+
+        #### force positive outputs
+        y_positive = keras.activations.softplus(y)
+        
+        
+        return Model(inputs=[input_mean, input_sd, input_all], outputs=y_positive)
+
         
         
     def fit(self, x, y, batch_size=32, epochs=10, verbose=0, callbacks=None, validation_split=0.0, validation_data=None, sample_weight=None, learningrate=0.01):
