@@ -59,7 +59,7 @@ https://software.ecmwf.int/wiki/display/TIGGE/Models
 ## Explanation of the code files
 
 - For reproducing the multivariate forecasts presented in the main paper:
-- 
+
 |File name| Explanation |
 |-------------|---------------|
 |`cgm_models_linear.py`| Codes for the class of the conditional generative models for multivariate post-processing (the version used in the main paper), build with Keras. |
