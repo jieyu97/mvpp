@@ -62,9 +62,9 @@ https://software.ecmwf.int/wiki/display/TIGGE/Models
 
 |File name| Explanation |
 |-------------|---------------|
+|**`mvpp_cgm_t2m.py`**| Codes for implementing the conditional generative model for post-processing of multivariate 2-m temperature forecasts at multiple stations. |
+|**`mvpp_cgm_ws.py`**| Codes for implementing the conditional generative model for post-processing of multivariate 10-m wind speed forecasts at multiple stations. |
 |`cgm_models_linear.py`| Codes for the class of the conditional generative models for multivariate post-processing (the version used in the main paper), build with Keras. |
-|`mvpp_cgm_t2m.py`| Codes for implementing the conditional generative model for post-processing of multivariate 2-m temperature forecasts at multiple stations. |
-|`mvpp_cgm_ws.py`| Codes for implementing the conditional generative model for post-processing of multivariate 10-m wind speed forecasts at multiple stations. |
 |`scoring_rules_new.py`| Codes for selected proper scoring rules that are reviewed in the paper, including the energy score which is used as the loss function of the conditional generative model. |
 
 - Others:
