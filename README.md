@@ -16,21 +16,59 @@ The data needed for reproducing the results is publicly available:
 
 https://software.ecmwf.int/wiki/display/TIGGE/Models
 
-- Variables: 50-member ensemble forecasts of the target variable (2 m temperature or 10 m wind speed), and some additional predictors
+- Forecast data: 2-days ahead 50-member ensemble forecasts
 - Time range: Daily forecasts from 2007-01-03 to 2016-12-31
+- Meteorological variables (**t2m** and **ws** are the target variables for post-processing):
 
-**Observations at weather stations operated by DWD?**
+|Variable| Description|
+|-------------|---------------|
+|**t2m**| 2-m temperature|
+|d2m| 2-m dewpoint temperature|
+|cape| Convective available potential energy|
+|sp| Surface pressure|
+|tcc| Total cloud cover|
+|q_pl850| Specific humidity at 850 hPa|
+|u_pl850| U component of wind at 850 hPa|
+|v_pl850| V component of wind at 850 hPa|
+|ws_pl850| Wind speed at 850 hPa|
+|u_pl500| U component of wind at 500 hPa|
+|v_pl500| V component of wind at 500 hPa|
+|gh_pl500| Geopotential height at 500 hPa|
+|ws_pl500| Wind speed at 500 hPa|
+|u10| 10-m U component of wind|
+|v10| 10-m V component of wind|
+|**ws**| 10-m wind speed|
+|sshf| Sensible heat flux|
+|slhf| Latent heat flux|
+|ssr| Shortwave radiation flux|
+|str| Longwave radiation flux|
 
-- Variables: Daily observations of the target variable (2 m temperature or 10 m wind speed), and the location information (longitude, latitude, altitude) of each station
+**Observations at weather stations operated by DWD**
 
-## 
+- Observation data: Daily observations of the target variable (2-m temperature and 10-m wind speed)
+- Metadata:
 
-cgm_models.py include a class of conditional generative models for
-wind speed and temperature forecast separately.
+|Variable| Description|
+|-------------|---------------|
+|lon| Longitude of station|
+|lat| Latitude of station|
+|alt| Altitude of station|
+|orog| Altitude of model grid point|
+|doy| Sine-transformed value of the day of the year|
 
-mvpp_cgm_ws.py and mvpp_cgm_t2m.py provide codes to use the conditional generative models for multivariate
-post-processing of wind speed or temperature, experimented on a test of 100 repetitions.
+## Explanation of the code files
 
-generating_test_stations.py shows how to select a list of test sets, with each set contains several weather 
-stations that are located close to each other.
+- For reproducing the multivariate forecasts presented in the main paper:
+- 
+|File name| Explanation |
+|-------------|---------------|
+|`cgm_models_linear.py`| Codes for the class of the conditional generative models for multivariate post-processing (the version used in the main paper), build with Keras. |
+|`mvpp_cgm_t2m_new.py`| Codes for implementing the conditional generative model for post-processing of multivariate 2-m temperature forecasts at multiple stations. |
+|`mvpp_cgm_ws_new.py`| Codes for implementing the conditional generative model for post-processing of multivariate 10-m wind speed forecasts at multiple stations. |
+|`scoring_rules_new.py`| Codes for selected proper scoring rules that are reviewed in the paper, including the energy score which is used as the loss function of the conditional generative model. |
 
+- Others:
+
+|File name| Explanation |
+|-------------|---------------|
+|`cgm_models_nonlinear.py`| Codes for the class of the conditional generative models for multivariate post-processing (the version considered in the ablation study of the supplement), build with Keras |
