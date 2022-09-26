@@ -19,11 +19,10 @@ dim = 10                        # dimension of target values
 var = 't2m'
 dist = 'normal'
 
-
-dist_samples = pd.read_csv('/home/chen_jieyu/cgm_backup/'+ var +'_dist_'+ str(dim) +'samples.csv', header = None)
+dist_samples = pd.read_csv('/your_path/'+ var +'_dist_'+ str(dim) +'samples.csv', header = None) # please change "your_path" accordingly
 
 # Read data
-path = '/home/chen_jieyu/cgm_backup/temperature_data_cgm_std.feather'
+path = '/your_path/temperature_data_cgm_std.feather' # please change "your_path" accordingly
 data_complete = pd.read_feather(path)
 
 callback = tf.keras.callbacks.EarlyStopping(monitor = 'val_loss', min_delta = 0, patience = 10, restore_best_weights = True)
