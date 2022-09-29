@@ -1,5 +1,5 @@
 """
-@author: Tim Janke
+@author: Tim Janke, Energy Information Networks & Systems Lab @ TU Darmstadt, Germany
 
 """
 
