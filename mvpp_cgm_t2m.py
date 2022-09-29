@@ -1,4 +1,7 @@
+"""
+@author: Jieyu Chen, ECON @ KIT, Germany
 
+"""
 import numpy as np
 import pandas as pd
 
