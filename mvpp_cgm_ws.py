@@ -19,11 +19,11 @@ dim = 5                        # dimension of target values
 var = 'ws'
 dist = 'normal'
 
-
-dist_samples = pd.read_csv('/your_path/'+ var +'_dist_'+ str(dim) +'samples.csv', header = None) # please change "your_path" accordingly
+path_samples = '/YOUR_PATH/' + var + '_dist_' + str(dim) + 'samples.csv' # please change "YOUR_PATH" accordingly
+dist_samples = pd.read_csv(path_samples, header = None)
 
 # Read data
-path = '/your_path/windspeed_data_cgm_std.feather' # please change "your_path" accordingly
+path = '/YOUR_PATH/windspeed_data_cgm_std.feather' # please change "YOUR_PATH" accordingly
 data_complete = pd.read_feather(path)
 
 callback = tf.keras.callbacks.EarlyStopping(monitor = 'val_loss', min_delta = 0, patience = 10, restore_best_weights = True)
@@ -179,7 +179,7 @@ for k in range(n_rep):
     ens_m3_result = pd.concat([testy, ens_m3_output_combine_l], axis=1)
 
     file_name = var + "_" + str(dim) + "dim_new_sa" + str(k+1) + ".csv"
-    ens_m3_result.to_csv('/Data/jieyu_data/mvpp_cgm/' + file_name)
+    ens_m3_result.to_csv('/YOUR_PATH/' + file_name) # please change "YOUR_PATH" accordingly
     
     print('CGM finished, round '+ str(k))
     
