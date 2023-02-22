@@ -2,7 +2,7 @@
 
 This repository provides python codes for the conditional generative model to multivariate post-processing accompanying the paper
 
-> Chen, Jieyu; Janke, Tim; Lerch, Sebastian (2022):
+> Chen, J., Janke, T., Steinke, F. and Lerch, S., 2022. Generative machine learning methods for multivariate ensemble post-processing. *arXiv preprint arXiv:2211.01345*.
 
 ## Data
 
