@@ -1,5 +1,6 @@
 """
 @author: Jieyu Chen, ECON @ KIT, Germany
+@author: Tim Janke, Energy Information Networks & Systems Lab @ TU Darmstadt, Germany
 
 """
 import numpy as np
@@ -22,16 +23,19 @@ dim = 5                        # dimension of target values
 var = 'ws'
 dist = 'normal'
 
-path_samples = '/YOUR_PATH/' + var + '_dist_' + str(dim) + 'samples.csv' # please change "YOUR_PATH" accordingly
+# Please change PATH accordingly
+PATH = './'
+
+path_samples = PATH + var + '_dist_' + str(dim) + 'samples.csv'
 dist_samples = pd.read_csv(path_samples, header = None)
 
 # Read data
-path = '/YOUR_PATH/windspeed_data_cgm_std.feather' # please change "YOUR_PATH" accordingly
-data_complete = pd.read_feather(path)
+path_data = PATH + 'windspeed_data_cgm_std.feather'
+data_complete = pd.read_feather(path_data)
 
 callback = tf.keras.callbacks.EarlyStopping(monitor = 'val_loss', min_delta = 0, patience = 10, restore_best_weights = True)
 
-# loop
+# Repeat CGM multivariate post-processing on 100 different subsets of stations in the test data
 n_rep = 100
 n_ens = 10
 
@@ -50,7 +54,7 @@ for k in range(n_rep):
     data_obs = used_data_subset['obs']
     data_obs.index = used_data_subset['date']
     
-    # set initial training and test dates
+    # Set initial training and test dates
     train_dateindex = ((data_obs.index.year != 2016) & (data_obs.index.year != 2015))
     val_dateindex = (data_obs.index.year == 2015)
     test_dateindex = (data_obs.index.year == 2016)
@@ -64,7 +68,6 @@ for k in range(n_rep):
     data_addpred = used_data_subset.iloc[:, 55:97]
     data_addpred.index = used_data_subset['date']
 
-    
     # Split training, validation, and test set
     norm_obs = data_obs.copy()
     norm_ens = data_ens.copy()
@@ -76,7 +79,7 @@ for k in range(n_rep):
     ens_mu = ensemble.mean(axis=1)
     ens_sigma = ensemble.std(axis=1)
     
-    ######### Normalization    
+    # Normalization of all predictors data except for sin(day_of_the_year)  
     scaler = preprocessing.StandardScaler().fit(norm_obs[train_dateindex].values.reshape(-1,1)) 
     stand_obs = scaler.transform(norm_obs.values.reshape(-1,1)).reshape(-1)
     norm_obs.iloc[:] = stand_obs
@@ -136,12 +139,12 @@ for k in range(n_rep):
     
     # Model
     BATCH_SIZE = 64  
-    LATENT_DIST = dist   # or uniform # family of latent varaible distributions
-    DIM_LATENT = 10           # number of latent variables
+    LATENT_DIST = dist     # family of latent varaible distributions
+    DIM_LATENT = 10        # number of latent variables
     LEARNING_RATE = 0.001
     EPOCHS = 300
-    N_SAMPLES_TRAIN = 50     # number of samples drawn during training
-    N_SAMPLES_TEST = 50     # 5
+    N_SAMPLES_TRAIN = 50   # number of samples drawn during training
+    N_SAMPLES_TEST = 50
     VERBOSE = 2
     ens_m3_output_combine_l = pd.DataFrame()
     
@@ -149,7 +152,7 @@ for k in range(n_rep):
     
         tfv.reset_default_graph()
         
-        # initialize model
+        # Initialize model
         cgm_init = cgm(dim_out = dim, 
                         dim_in_mean = x_training[0].shape[-1], 
                         dim_in_std = x_training[1].shape[-1],
@@ -159,7 +162,7 @@ for k in range(n_rep):
                         model_type = var, 
                         latent_dist = LATENT_DIST)
         
-        # fit model
+        # Fit model
         cgm_init.fit(x = x_training, 
                     y = y_training, 
                     batch_size = BATCH_SIZE, 
@@ -181,8 +184,8 @@ for k in range(n_rep):
     
     ens_m3_result = pd.concat([testy, ens_m3_output_combine_l], axis=1)
 
-    file_name = var + "_" + str(dim) + "dim_new_sa" + str(k+1) + ".csv"
-    ens_m3_result.to_csv('/YOUR_PATH/' + file_name) # please change "YOUR_PATH" accordingly
+    file_name = var + "_" + str(dim) + "dim_cgm_sa" + str(k+1) + ".csv"
+    ens_m3_result.to_csv(PATH + file_name)
     
     print('CGM finished, round '+ str(k))
     

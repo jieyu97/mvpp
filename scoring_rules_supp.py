@@ -53,6 +53,7 @@ def es_sample(y_true, y_pred, return_single_scores=False):
         return np.mean(scores)
 
 
+# Copula Energy Scores
 def ces_sample(y_true, y_pred, return_single_scores=False):
     """
     Compute mean copula energy score from samples of the predictive distribution.
@@ -129,6 +130,7 @@ def vs_sample(y_true, y_pred, p=0.5, return_single_scores=False):
         return np.mean(scores)
 
 
+# Copula Variogram Scores
 def cvs_sample(y_true, y_pred, p=0.5, return_single_scores=False):
     """
     Compute mean copula variogram score from samples of the predictive distribution. 
