@@ -58,14 +58,20 @@ https://software.ecmwf.int/wiki/display/TIGGE/Models
 
 ## Explanation of the code files
 
-- For reproducing the multivariate forecasts presented in the main paper:
+- For reproducing the multivariate forecasts presented in the main paper (*please download the two datasets above from figshare first*):
 
 |File name| Explanation |
 |-------------|---------------|
-|**`mvpp_cgm_t2m.py`**| Codes for implementing the conditional generative model for post-processing of multivariate 2-m temperature forecasts at multiple stations. |
-|**`mvpp_cgm_ws.py`**| Codes for implementing the conditional generative model for post-processing of multivariate 10-m wind speed forecasts at multiple stations. |
-|`cgm_models_linear.py`| Codes for the class of the conditional generative models for multivariate post-processing (the version used in the main paper), build with Keras. |
-|`scoring_rules_new.py`| Codes for selected proper scoring rules that are reviewed in the paper, including the energy score which is used as the loss function of the conditional generative model. |
+|**`CGM_mvpp_t2m.py`**| Python script to implement CGM for post-processing of multivariate 2-m temperature forecasts at multiple stations. |
+|**`CGM_mvpp_ws.py`**| Python script to implement CGM for post-processing of multivariate 10-m wind speed forecasts at multiple stations. |
+|**`DRN_unipp_t2m.ipynb`**| Jupyter notebook to implement DRN for univariate post-processing of 2-m temperature forecasts. |
+|**`DRN_unipp_ws.ipynb`**| Jupyter notebook to implement DRN for univariate post-processing of 10-m wind speed forecasts. |
+|**`DRNcopula_mvpp_t2m.R`**| R script to implement DRN + ECC/GCA for post-processing of multivariate 2-m temperature forecasts at multiple stations. |
+|**`DRNcopula_mvpp_ws.R`**| R script to implement DRN + ECC/GCA for post-processing of multivariate 10-m wind speed forecasts at multiple stations. |
+|**`EMOScopula_mvpp_t2m.R`**| R script to implement EMOS + ECC/GCA for post-processing of multivariate 2-m temperature forecasts at multiple stations. |
+|**`EMOScopula_mvpp_ws.R`**| R script to implement EMOS + ECC/GCA for post-processing of multivariate 10-m wind speed forecasts at multiple stations. |
+|`cgm_models_linear.py`| Class of the conditional generative models for multivariate post-processing (the version used in the main paper), build with Keras. |
+|`scoring_rules_supp.py`| Codes for computing several proper scoring rules in python. |
 
 - Others:
 
