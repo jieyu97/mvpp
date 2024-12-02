@@ -4,6 +4,8 @@ This repository provides python codes for the conditional generative model to mu
 
 > Chen, J., Janke, T., Steinke, F. and Lerch, S., 2022. Generative machine learning methods for multivariate ensemble post-processing. *arXiv preprint arXiv:2211.01345*.
 
+**The version of the Tensorflow library used for the code is Tensorflow 2.3, a newer version of Tensorflow may cause the code to fail. :)**
+
 ## Data
 
 The data needed for reproducing the results is publicly available:
