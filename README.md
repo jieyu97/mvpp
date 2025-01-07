@@ -3,6 +3,7 @@
 This repository provides python codes for the conditional generative model to multivariate post-processing accompanying the paper
 
 > Chen, J., Janke, T., Steinke, F. and Lerch, S., 2024. Generative machine learning methods for multivariate ensemble post-processing. *Ann. Appl. Stat. 18 (1) 159 - 183*. https://doi.org/10.1214/23-AOAS1784
+> 
 > Chen, J., Janke, T., Steinke, F. and Lerch, S., 2022. Generative machine learning methods for multivariate ensemble post-processing. *arXiv preprint arXiv:2211.01345*.
 
 **The version of the Tensorflow library used for the code is Tensorflow 2.3, a newer version of Tensorflow may cause the code to fail. :)**
